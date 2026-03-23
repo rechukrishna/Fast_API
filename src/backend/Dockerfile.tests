@@ -1,0 +1,9 @@
+FROM python:3.11-slim
+
+WORKDIR /tests
+
+RUN pip install --no-cache-dir robotframework robotframework-requests
+
+COPY tests /tests/tests
+
+CMD ["robot", "--variable", "API_URL:http://api:8000", "--outputdir", "tests/results", "tests/api/"]

@@ -31,6 +31,25 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  robot-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    container_name: backend-robot-tests
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./tests/results:/tests/tests/results
+    profiles:
+      - test
 
   pgadmin:
     image: dpage/pgadmin4

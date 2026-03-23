@@ -37,3 +37,12 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
 @router.get("/", response_model=List[schemas.Order])
 def list_orders(db: Session = Depends(get_db)):
     return db.query(models.Order).all()
+
+
+@router.delete("/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_order(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    db.delete(order)
+    db.commit()

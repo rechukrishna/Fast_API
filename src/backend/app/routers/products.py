@@ -29,3 +29,12 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 @router.get("/", response_model=List[schemas.Product])
 def list_products(db: Session = Depends(get_db)):
     return db.query(models.Product).all()
+
+
+@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_product(product_id: int, db: Session = Depends(get_db)):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    db.delete(product)
+    db.commit()
