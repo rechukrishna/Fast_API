@@ -51,6 +51,19 @@ services:
     profiles:
       - test
 
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
+    container_name: backend-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: backend-pgadmin
