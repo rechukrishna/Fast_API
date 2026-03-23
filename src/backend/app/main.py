@@ -19,7 +19,13 @@ app = FastAPI(title="Telecom Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=["Content-Type", "Authorization", "Accept", "Accept-Language", "Origin"],
@@ -31,6 +37,21 @@ def seed_data():
     db = SessionLocal()
     seed_environment_data(db)
     db.close()
+
+# ---- Test-only: reset DB for repeatable tests ----
+@app.post("/test/reset")
+def test_reset_db():
+    """Truncate tables and re-seed. Only for test environments."""
+    from sqlalchemy import text
+    db = SessionLocal()
+    try:
+        db.execute(text("TRUNCATE orders, products, users RESTART IDENTITY CASCADE"))
+        db.commit()
+        seed_environment_data(db)
+    finally:
+        db.close()
+    return {"status": "ok"}
+
 
 # ---- Routers ----
 app.include_router(auth.router)

@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /tests
 
-RUN pip install --no-cache-dir robotframework robotframework-requests
+RUN pip install --no-cache-dir robotframework robotframework-requests requests
 
 COPY tests /tests/tests
 

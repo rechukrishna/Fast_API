@@ -3,6 +3,7 @@ Library    RequestsLibrary
 Library    Collections
 Library    OperatingSystem
 Library    BuiltIn
+Library    String
 
 *** Variables ***
 # Use API_URL env var when set (e.g. Docker: http://api:8000), else localhost for local runs
@@ -12,12 +13,19 @@ ${AUTH_EMAIL}      alice@example.com
 ${AUTH_PASSWORD}   password123
 
 *** Keywords ***
+
+Reset Test Database
+    Create Session    reset    ${API_URL}
+    ${resp}=    POST On Session    reset    /test/reset
+    Should Be Equal As Integers    ${resp.status_code}    200
+    Delete All Sessions
+
 Get Auth Token
     Create Session    api    ${API_URL}
     ${body}=    Create Dictionary    email=${AUTH_EMAIL}    password=${AUTH_PASSWORD}
     ${resp}=    POST On Session    api    /auth/login    json=${body}
     Should Be Equal As Integers    ${resp.status_code}    200
-    [Return]    ${resp.json()["access_token"]}
+    RETURN    ${resp.json()["access_token"]}
 
 Create API Session
     ${token}=    Get Auth Token
@@ -88,7 +96,8 @@ Register Created Order Id
     Set Global Variable    ${CREATED_ORDER_IDS}
 
 Delete Test Data By Tracked Ids
-    Create API Session
+    ${status}    ${error}=    Run Keyword And Ignore Error    Create API Session
+    Return From Keyword If    '${status}' == 'FAIL'
     FOR    ${order_id}    IN    @{CREATED_ORDER_IDS}
         Run Keyword And Ignore Error    DELETE On Session    api    /orders/${order_id}
     END
