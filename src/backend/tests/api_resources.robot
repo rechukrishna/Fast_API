@@ -25,9 +25,12 @@ Create API Session
     Create Session    api    ${API_URL}    headers=${headers}
 
 Initialize Test Data Tracking
-    Set Global Variable    ${CREATED_USER_IDS}    @{EMPTY}
-    Set Global Variable    ${CREATED_PRODUCT_IDS}    @{EMPTY}
-    Set Global Variable    ${CREATED_ORDER_IDS}    @{EMPTY}
+    ${CREATED_USER_IDS}=    Create List
+    ${CREATED_PRODUCT_IDS}=    Create List
+    ${CREATED_ORDER_IDS}=    Create List
+    Set Global Variable    ${CREATED_USER_IDS}    ${CREATED_USER_IDS}
+    Set Global Variable    ${CREATED_PRODUCT_IDS}    ${CREATED_PRODUCT_IDS}
+    Set Global Variable    ${CREATED_ORDER_IDS}    ${CREATED_ORDER_IDS}
 
 Seed Test Users From File
     Create API Session
