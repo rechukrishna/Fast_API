@@ -1,14 +1,17 @@
 [
   {
-    "name": "Test User",
-    "email": "testuser_suite@example.com"
-  },
-  {
-    "name": "Suite Tester",
-    "email": "suitetester@example.com"
+    "name": "Suite Test User",
+    "email": "suite_test@example.com",
+    "password": "password123"
   },
   {
     "name": "API Test User",
-    "email": "apitestuser@example.com"
+    "email": "apitestuser@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Suite Tester",
+    "email": "suitetester@example.com",
+    "password": "password123"
   }
 ]
