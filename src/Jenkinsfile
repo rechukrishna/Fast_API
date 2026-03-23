@@ -21,7 +21,7 @@ pipeline {
             steps {
                 dir(env.BACKEND_DIR) {
                     bat 'docker-compose up -d db api'
-                    bat 'timeout /t 30 /nobreak'
+                    bat 'ping 127.0.0.1 -n 31 > nul'
                 }
             }
         }
@@ -41,10 +41,9 @@ pipeline {
                 bat 'docker-compose down -v'
             }
             script {
-                def resultsDir = "${env.WORKSPACE}/${env.BACKEND_DIR}/tests/results"
-                def outputFile = new File("${resultsDir}/output.xml")
-                if (outputFile.exists()) {
-                    robot outputPath: env.BACKEND_DIR + '/tests/results'
+                def outputExists = fileExists "${env.BACKEND_DIR}/tests/results/output.xml"
+                if (outputExists) {
+                    robot outputPath: "${env.BACKEND_DIR}/tests/results"
                     archiveArtifacts artifacts: "${env.BACKEND_DIR}/tests/results/report.html, ${env.BACKEND_DIR}/tests/results/log.html", allowEmptyArchive: true
                 }
             }
