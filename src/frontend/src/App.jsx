@@ -351,7 +351,19 @@ function OrdersView({ apiUrl, token, onUnauth }) {
           status: form.status,
         }),
       }, token, onUnauth)
-      if (!res.ok) throw new Error((await res.json()).detail || await res.text())
+      if (!res.ok) {
+        const text = await res.text()
+        let msg = text || res.statusText
+        try {
+          const err = JSON.parse(text)
+          if (err.detail) {
+            msg = Array.isArray(err.detail)
+              ? err.detail.map((d) => d.msg || JSON.stringify(d)).join(', ')
+              : String(err.detail)
+          }
+        } catch (_) {}
+        throw new Error(msg)
+      }
       setForm({ user_id: '', product_id: '', quantity: '1', status: 'pending' })
       fetchAll()
     } catch (e) {
