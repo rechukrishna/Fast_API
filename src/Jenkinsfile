@@ -20,8 +20,8 @@ pipeline {
         stage('Start Services') {
             steps {
                 dir(env.BACKEND_DIR) {
-                    sh 'docker-compose up -d db api'
-                    sh 'sleep 30'
+                    bat 'docker-compose up -d db api'
+                    bat 'timeout /t 30 /nobreak'
                 }
             }
         }
@@ -29,7 +29,7 @@ pipeline {
         stage('Run API Tests') {
             steps {
                 dir(env.BACKEND_DIR) {
-                    sh 'docker-compose --profile test run --rm robot-tests'
+                    bat 'docker-compose --profile test run --rm robot-tests'
                 }
             }
         }
@@ -37,10 +37,16 @@ pipeline {
 
     post {
         always {
-            robot outputPath: "${env.BACKEND_DIR}/tests/results"
-            archiveArtifacts artifacts: "${env.BACKEND_DIR}/tests/results/report.html, ${env.BACKEND_DIR}/tests/results/log.html", allowEmptyArchive: true
             dir(env.BACKEND_DIR) {
-                sh 'docker-compose down -v'
+                bat 'docker-compose down -v'
+            }
+            script {
+                def resultsDir = "${env.WORKSPACE}/${env.BACKEND_DIR}/tests/results"
+                def outputFile = new File("${resultsDir}/output.xml")
+                if (outputFile.exists()) {
+                    robot outputPath: env.BACKEND_DIR + '/tests/results'
+                    archiveArtifacts artifacts: "${env.BACKEND_DIR}/tests/results/report.html, ${env.BACKEND_DIR}/tests/results/log.html", allowEmptyArchive: true
+                }
             }
         }
     }
