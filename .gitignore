@@ -1,0 +1,46 @@
+# Exclude Project folder
+Project/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.env
+.env.local
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Robot Framework
+results/
+output.xml
+log.html
+report.html
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node (fake-api)
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.docker/
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
