@@ -38,7 +38,7 @@ Post User Creates New User
     Create API Session
     ${timestamp}=    Get Time    epoch
     ${email}=    Set Variable    testuser${timestamp}@example.com
-    ${body}=    Create Dictionary    name=Test User    email=${email}
+    ${body}=    Create Dictionary    name=Test User    email=${email}    password=testpass123
     ${resp}=    POST On Session    api    /users    json=${body}
     Should Be Equal As Integers    ${resp.status_code}    201
     Dictionary Should Contain Key    ${resp.json()}    id

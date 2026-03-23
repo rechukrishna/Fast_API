@@ -87,6 +87,12 @@
   margin-bottom: 1rem;
 }
 
+.user-email {
+  color: #a1a1aa;
+  font-size: 0.875rem;
+  margin-right: 0.5rem;
+}
+
 .logout-btn {
   margin-left: auto;
   background: transparent;

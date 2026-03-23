@@ -2,19 +2,41 @@ import { useState, useEffect } from 'react'
 import './App.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-const AUTH_KEY = 'fastapi_user'
+const AUTH_TOKEN_KEY = 'fastapi_token'
+const AUTH_USER_KEY = 'fastapi_user'
+
+function getStoredAuth() {
+  const token = localStorage.getItem(AUTH_TOKEN_KEY)
+  const user = localStorage.getItem(AUTH_USER_KEY)
+  return token && user ? { token, user } : null
+}
+
+function authFetch(url, options, token, onUnauth) {
+  const headers = { ...options?.headers, Authorization: `Bearer ${token}` }
+  return fetch(url, { ...options, headers }).then((res) => {
+    if (res.status === 401) onUnauth()
+    return res
+  })
+}
 
 function App() {
-  const [user, setUser] = useState(() => localStorage.getItem(AUTH_KEY))
+  const [auth, setAuth] = useState(getStoredAuth)
   const [tab, setTab] = useState('users')
 
   const logout = () => {
-    localStorage.removeItem(AUTH_KEY)
-    setUser(null)
+    localStorage.removeItem(AUTH_TOKEN_KEY)
+    localStorage.removeItem(AUTH_USER_KEY)
+    setAuth(null)
   }
 
-  if (!user) {
-    return <LoginPage onLogin={setUser} />
+  const handleLogin = (token, user) => {
+    localStorage.setItem(AUTH_TOKEN_KEY, token)
+    localStorage.setItem(AUTH_USER_KEY, user)
+    setAuth({ token, user })
+  }
+
+  if (!auth) {
+    return <LoginPage onLogin={handleLogin} apiUrl={API_URL} />
   }
 
   return (
@@ -31,24 +53,26 @@ function App() {
               {t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           ))}
+          <span className="user-email">{auth.user}</span>
           <button className="logout-btn" onClick={logout}>Logout</button>
         </nav>
       </header>
       <main className="main">
-        {tab === 'users' && <UsersView apiUrl={API_URL} />}
-        {tab === 'products' && <ProductsView apiUrl={API_URL} />}
-        {tab === 'orders' && <OrdersView apiUrl={API_URL} />}
+        {tab === 'users' && <UsersView apiUrl={API_URL} token={auth.token} onUnauth={logout} />}
+        {tab === 'products' && <ProductsView apiUrl={API_URL} token={auth.token} onUnauth={logout} />}
+        {tab === 'orders' && <OrdersView apiUrl={API_URL} token={auth.token} onUnauth={logout} />}
       </main>
     </div>
   )
 }
 
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, apiUrl }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     if (!email.trim()) {
@@ -59,8 +83,24 @@ function LoginPage({ onLogin }) {
       setError('Password is required')
       return
     }
-    localStorage.setItem(AUTH_KEY, email)
-    onLogin(email)
+    setLoading(true)
+    try {
+      const res = await fetch(`${apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.detail || res.statusText || 'Login failed')
+        return
+      }
+      onLogin(data.access_token, data.user?.email ?? email)
+    } catch (err) {
+      setError(err.message || 'Network error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -84,24 +124,24 @@ function LoginPage({ onLogin }) {
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
           />
-          <button type="submit">Sign In</button>
+          <button type="submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign In'}</button>
         </form>
       </div>
     </div>
   )
 }
 
-function UsersView({ apiUrl }) {
+function UsersView({ apiUrl, token, onUnauth }) {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [form, setForm] = useState({ name: '', email: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [submitting, setSubmitting] = useState(false)
 
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${apiUrl}/users`)
+      const res = await authFetch(`${apiUrl}/users`, {}, token, onUnauth)
       if (!res.ok) throw new Error(res.statusText)
       const data = await res.json()
       setUsers(data)
@@ -114,19 +154,22 @@ function UsersView({ apiUrl }) {
 
   useEffect(() => {
     fetchUsers()
-  }, [apiUrl])
+  }, [apiUrl, token])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitting(true)
     try {
-      const res = await fetch(`${apiUrl}/users`, {
+      const res = await authFetch(`${apiUrl}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
-      if (!res.ok) throw new Error(await res.text())
-      setForm({ name: '', email: '' })
+        body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
+      }, token, onUnauth)
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.detail || await res.text())
+      }
+      setForm({ name: '', email: '', password: '' })
       fetchUsers()
     } catch (e) {
       setError(e.message)
@@ -154,6 +197,13 @@ function UsersView({ apiUrl }) {
           onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
           required
         />
+        <input
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+          required
+        />
         <button type="submit" disabled={submitting}>Add User</button>
       </form>
       <ul className="list">
@@ -165,7 +215,7 @@ function UsersView({ apiUrl }) {
   )
 }
 
-function ProductsView({ apiUrl }) {
+function ProductsView({ apiUrl, token, onUnauth }) {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -175,7 +225,7 @@ function ProductsView({ apiUrl }) {
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${apiUrl}/products`)
+      const res = await authFetch(`${apiUrl}/products`, {}, token, onUnauth)
       if (!res.ok) throw new Error(res.statusText)
       const data = await res.json()
       setProducts(data)
@@ -188,13 +238,13 @@ function ProductsView({ apiUrl }) {
 
   useEffect(() => {
     fetchProducts()
-  }, [apiUrl])
+  }, [apiUrl, token])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitting(true)
     try {
-      const res = await fetch(`${apiUrl}/products`, {
+      const res = await authFetch(`${apiUrl}/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -202,8 +252,11 @@ function ProductsView({ apiUrl }) {
           price: parseFloat(form.price),
           stock: parseInt(form.stock, 10),
         }),
-      })
-      if (!res.ok) throw new Error(await res.text())
+      }, token, onUnauth)
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.detail || await res.text())
+      }
       setForm({ name: '', price: '', stock: '' })
       fetchProducts()
     } catch (e) {
@@ -251,7 +304,7 @@ function ProductsView({ apiUrl }) {
   )
 }
 
-function OrdersView({ apiUrl }) {
+function OrdersView({ apiUrl, token, onUnauth }) {
   const [orders, setOrders] = useState([])
   const [users, setUsers] = useState([])
   const [products, setProducts] = useState([])
@@ -264,9 +317,9 @@ function OrdersView({ apiUrl }) {
     try {
       setLoading(true)
       const [oRes, uRes, pRes] = await Promise.all([
-        fetch(`${apiUrl}/orders`),
-        fetch(`${apiUrl}/users`),
-        fetch(`${apiUrl}/products`),
+        authFetch(`${apiUrl}/orders`, {}, token, onUnauth),
+        authFetch(`${apiUrl}/users`, {}, token, onUnauth),
+        authFetch(`${apiUrl}/products`, {}, token, onUnauth),
       ])
       if (!oRes.ok || !uRes.ok || !pRes.ok) throw new Error('Fetch failed')
       const [o, u, p] = await Promise.all([oRes.json(), uRes.json(), pRes.json()])
@@ -282,13 +335,13 @@ function OrdersView({ apiUrl }) {
 
   useEffect(() => {
     fetchAll()
-  }, [apiUrl])
+  }, [apiUrl, token])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitting(true)
     try {
-      const res = await fetch(`${apiUrl}/orders`, {
+      const res = await authFetch(`${apiUrl}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -297,8 +350,8 @@ function OrdersView({ apiUrl }) {
           quantity: parseInt(form.quantity, 10),
           status: form.status,
         }),
-      })
-      if (!res.ok) throw new Error(await res.text())
+      }, token, onUnauth)
+      if (!res.ok) throw new Error((await res.json()).detail || await res.text())
       setForm({ user_id: '', product_id: '', quantity: '1', status: 'pending' })
       fetchAll()
     } catch (e) {
@@ -367,4 +420,3 @@ function OrdersView({ apiUrl }) {
 }
 
 export default App
-

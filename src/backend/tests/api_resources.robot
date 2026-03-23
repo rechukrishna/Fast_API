@@ -5,12 +5,24 @@ Library    OperatingSystem
 Library    BuiltIn
 
 *** Variables ***
-${API_URL}         http://localhost:8000
+# Use API_URL env var when set (e.g. Docker: http://api:8000), else localhost for local runs
+${API_URL}         %{API_URL=http://localhost:8000}
 ${TEST_DATA_DIR}   ${CURDIR}/test_data
+${AUTH_EMAIL}      alice@example.com
+${AUTH_PASSWORD}   password123
 
 *** Keywords ***
-Create API Session
+Get Auth Token
     Create Session    api    ${API_URL}
+    ${body}=    Create Dictionary    email=${AUTH_EMAIL}    password=${AUTH_PASSWORD}
+    ${resp}=    POST On Session    api    /auth/login    json=${body}
+    Should Be Equal As Integers    ${resp.status_code}    200
+    [Return]    ${resp.json()["access_token"]}
+
+Create API Session
+    ${token}=    Get Auth Token
+    &{headers}=    Create Dictionary    Authorization=Bearer ${token}
+    Create Session    api    ${API_URL}    headers=${headers}
 
 Initialize Test Data Tracking
     Set Global Variable    ${CREATED_USER_IDS}    @{EMPTY}
@@ -27,7 +39,7 @@ Seed Test Users From File
     FOR    ${user}    IN    @{users}
         ${email}=    Set Variable    testuser${timestamp}_${idx}@example.com
         ${idx}=    Evaluate    ${idx} + 1
-        ${body}=    Create Dictionary    name=${user["name"]}    email=${email}
+        ${body}=    Create Dictionary    name=${user["name"]}    email=${email}    password=testpass123
         ${resp}=    POST On Session    api    /users    json=${body}
         Append To List    ${CREATED_USER_IDS}    ${resp.json()["id"]}
         Set Global Variable    ${CREATED_USER_IDS}

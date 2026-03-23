@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY app /app/app
 
-RUN pip install --no-cache-dir fastapi uvicorn sqlalchemy psycopg2-binary "pydantic[email]"
+RUN pip install --no-cache-dir fastapi uvicorn sqlalchemy psycopg2-binary "pydantic[email]" "passlib[bcrypt]" "python-jose[cryptography]" python-multipart
 
 ENV PYTHONPATH=/app
 

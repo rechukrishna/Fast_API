@@ -1,15 +1,20 @@
 from sqlalchemy.orm import Session
 from . import models
+from .auth import get_password_hash
+
+DEFAULT_PASSWORD = "password123"
+
 
 def seed_environment_data(db: Session):
     # ---- Seed Users ----
     if db.query(models.User).count() == 0:
+        hashed = get_password_hash(DEFAULT_PASSWORD)
         baseline_users = [
-            models.User(name="Alice Johnson", email="alice@example.com"),
-            models.User(name="Bob Smith", email="bob@example.com"),
-            models.User(name="Charlie Brown", email="charlie@example.com"),
-            models.User(name="Diana Prince", email="diana@example.com"),
-            models.User(name="Ethan Hunt", email="ethan@example.com"),
+            models.User(name="Alice Johnson", email="alice@example.com", hashed_password=hashed),
+            models.User(name="Bob Smith", email="bob@example.com", hashed_password=hashed),
+            models.User(name="Charlie Brown", email="charlie@example.com", hashed_password=hashed),
+            models.User(name="Diana Prince", email="diana@example.com", hashed_password=hashed),
+            models.User(name="Ethan Hunt", email="ethan@example.com", hashed_password=hashed),
         ]
         db.add_all(baseline_users)
         db.commit()

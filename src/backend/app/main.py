@@ -2,10 +2,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine, SessionLocal
 from . import models
-from .routers import users, products, orders
+from .routers import auth, users, products, orders
 from .seed import seed_environment_data
 
 models.Base.metadata.create_all(bind=engine)
+
+# Migration: add hashed_password column if missing (for existing DBs)
+from sqlalchemy import text
+try:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS hashed_password VARCHAR(255)"))
+except Exception:
+    pass  # Column may already exist or DB may not support IF NOT EXISTS
 
 app = FastAPI(title="Telecom Backend")
 
@@ -25,6 +33,7 @@ def seed_data():
     db.close()
 
 # ---- Routers ----
+app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(products.router)
 app.include_router(orders.router)
