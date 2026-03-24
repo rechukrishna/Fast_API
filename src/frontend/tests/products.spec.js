@@ -1,20 +1,40 @@
 // @ts-check
 import { test, expect } from '@playwright/test'
+import {
+  getAuthToken,
+  createProducts,
+  deleteProducts,
+  getProductsTestData,
+} from './helpers/test-data.js'
 
-const VALID_EMAIL = 'alice@example.com'
-const VALID_PASSWORD = 'password123'
+const LOGIN_EMAIL = 'alice@example.com'
+const LOGIN_PASSWORD = 'password123'
+
+/** @type {Awaited<ReturnType<typeof createProducts>>} */
+let testProducts = []
 
 async function login(page) {
   await page.goto('/')
   await page.evaluate(() => localStorage.clear())
   await page.reload()
-  await page.getByPlaceholder('Email').fill(VALID_EMAIL)
-  await page.getByPlaceholder('Password').fill(VALID_PASSWORD)
+  await page.getByPlaceholder('Email').fill(LOGIN_EMAIL)
+  await page.getByPlaceholder('Password').fill(LOGIN_PASSWORD)
   await page.getByRole('button', { name: 'Sign In' }).click()
   await expect(page.locator('.header')).toBeVisible({ timeout: 5000 })
 }
 
 test.describe('Products Page', () => {
+  test.beforeAll(async ({ request }) => {
+    const token = await getAuthToken(request)
+    const productDefs = getProductsTestData()
+    testProducts = await createProducts(request, token, productDefs)
+  })
+
+  test.afterAll(async ({ request }) => {
+    const token = await getAuthToken(request)
+    await deleteProducts(request, token, testProducts)
+  })
+
   test.beforeEach(async ({ page }) => {
     await login(page)
     await page.getByRole('button', { name: 'Products' }).click()
@@ -30,11 +50,12 @@ test.describe('Products Page', () => {
     await expect(page.locator('.list')).toBeVisible()
   })
 
-  test('displays seeded products', async ({ page }) => {
+  test('displays test products', async ({ page }) => {
     const list = page.locator('.list')
-    await expect(list.getByText('Laptop Pro 15').first()).toBeVisible()
-    await expect(list.getByText('Wireless Headphones').first()).toBeVisible()
-    await expect(list.getByText('Smartphone X').first()).toBeVisible()
+    for (const p of testProducts) {
+      await expect(list.getByText(p.name).first()).toBeVisible()
+      await expect(list.getByText(`$${p.price}`).first()).toBeVisible()
+    }
   })
 
   test('adds new product and shows in list', async ({ page }) => {

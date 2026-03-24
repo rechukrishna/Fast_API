@@ -1,0 +1,5 @@
+[
+  { "namePrefix": "Order Product X", "price": 19.99, "stock": 50 },
+  { "namePrefix": "Order Product Y", "price": 79.99, "stock": 20 },
+  { "namePrefix": "Order Product Z", "price": 5.99, "stock": 200 }
+]

@@ -1,0 +1,5 @@
+[
+  { "namePrefix": "Test Widget A", "price": 29.99, "stock": 100 },
+  { "namePrefix": "Test Gadget B", "price": 149.5, "stock": 25 },
+  { "namePrefix": "Test Gizmo C", "price": 9.99, "stock": 500 }
+]

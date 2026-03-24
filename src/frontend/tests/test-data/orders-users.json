@@ -1,0 +1,5 @@
+[
+  { "name": "Order User A", "emailPrefix": "order-a", "password": "pass123" },
+  { "name": "Order User B", "emailPrefix": "order-b", "password": "pass123" },
+  { "name": "Order User C", "emailPrefix": "order-c", "password": "pass123" }
+]

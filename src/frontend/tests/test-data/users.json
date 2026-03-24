@@ -1,0 +1,5 @@
+[
+  { "name": "Test User Alpha", "emailPrefix": "alpha", "password": "pass123" },
+  { "name": "Test User Beta", "emailPrefix": "beta", "password": "pass123" },
+  { "name": "Test User Gamma", "emailPrefix": "gamma", "password": "pass123" }
+]
