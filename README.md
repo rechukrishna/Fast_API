@@ -68,12 +68,12 @@ robot --outputdir tests/results tests/api/
 
 ## Jenkins CI
 
-The `Jenkinsfile` at `src/Jenkinsfile` runs the API tests in Jenkins.
+The `Jenkinsfile` in the project root runs the API and frontend tests in Jenkins.
 
 **Setup:**
 1. Install **Robot Framework Plugin** in Jenkins
 2. Create a **Pipeline** job
 3. Set **Pipeline from SCM** → Git → your repo URL
-4. Set **Script Path** to `src/Jenkinsfile`
+4. Set **Script Path** to `Jenkinsfile`
 
 **Requirements:** Docker and Docker Compose on the Jenkins agent.
