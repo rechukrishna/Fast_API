@@ -8,6 +8,9 @@ pipeline {
 
     environment {
         BACKEND_DIR = 'src/backend'
+        FRONTEND_DIR = 'src/frontend'
+        CI = 'true'
+        PLAYWRIGHT_SKIP_WEBSERVER = 'true'
     }
 
     stages {
@@ -20,7 +23,7 @@ pipeline {
         stage('Start Services') {
             steps {
                 dir(env.BACKEND_DIR) {
-                    bat 'docker-compose up -d db api'
+                    bat 'docker-compose up -d db api frontend'
                     bat 'ping 127.0.0.1 -n 31 > nul'
                 }
             }
@@ -30,6 +33,16 @@ pipeline {
             steps {
                 dir(env.BACKEND_DIR) {
                     bat 'docker-compose --profile test run --rm robot-tests'
+                }
+            }
+        }
+
+        stage('Run Frontend Tests') {
+            steps {
+                dir(env.FRONTEND_DIR) {
+                    bat 'npm ci'
+                    bat 'npx playwright install chromium'
+                    bat 'npx playwright test'
                 }
             }
         }
@@ -45,6 +58,10 @@ pipeline {
                 if (outputExists) {
                     robot outputPath: "${env.BACKEND_DIR}/tests/results"
                     archiveArtifacts artifacts: "${env.BACKEND_DIR}/tests/results/report.html, ${env.BACKEND_DIR}/tests/results/log.html", allowEmptyArchive: true
+                }
+                def playwrightReportExists = fileExists "${env.FRONTEND_DIR}/playwright-report/index.html"
+                if (playwrightReportExists) {
+                    archiveArtifacts artifacts: "${env.FRONTEND_DIR}/playwright-report/", allowEmptyArchive: true
                 }
             }
         }
