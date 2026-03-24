@@ -14,11 +14,12 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: process.env.CI
-    ? {
-        command: 'npm run preview',
-        url: 'http://localhost:4173',
-        reuseExistingServer: false,
-      }
-    : undefined,
+  webServer:
+    process.env.CI && !process.env.PLAYWRIGHT_SKIP_WEBSERVER
+      ? {
+          command: 'npm run preview',
+          url: 'http://localhost:4173',
+          reuseExistingServer: false,
+        }
+      : undefined,
 })
