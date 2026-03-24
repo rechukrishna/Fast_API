@@ -59,8 +59,18 @@ pipeline {
                     robot outputPath: "${env.BACKEND_DIR}/tests/results"
                     archiveArtifacts artifacts: "${env.BACKEND_DIR}/tests/results/report.html, ${env.BACKEND_DIR}/tests/results/log.html", allowEmptyArchive: true
                 }
+                junit allowEmptyResults: true, testResults: "${env.FRONTEND_DIR}/test-results/*.xml"
                 def playwrightReportExists = fileExists "${env.FRONTEND_DIR}/playwright-report/index.html"
                 if (playwrightReportExists) {
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: "${env.FRONTEND_DIR}/playwright-report",
+                        reportFiles: 'index.html',
+                        reportName: 'Playwright Report',
+                        reportTitles: ''
+                    ])
                     archiveArtifacts artifacts: "${env.FRONTEND_DIR}/playwright-report/", allowEmptyArchive: true
                 }
             }
