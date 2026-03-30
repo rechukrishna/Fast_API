@@ -9,6 +9,7 @@ pipeline {
     environment {
         BACKEND_DIR = 'src/backend'
         FRONTEND_DIR = 'src/frontend'
+        FRONTEND_ROBOT_RESULTS_DIR = 'src/frontend/robot-selenium/results'
         CI = 'true'
         PLAYWRIGHT_SKIP_WEBSERVER = 'true'
     }
@@ -46,6 +47,54 @@ pipeline {
                 }
             }
         }
+
+        stage('Setup Frontend Robot Selenium') {
+            steps {
+                dir(env.FRONTEND_DIR) {
+                    bat 'py -m pip install -r robot-selenium\\requirements-ui-selenium.txt'
+                }
+            }
+        }
+
+        stage('Run Frontend Robot Selenium - Login') {
+            steps {
+                dir(env.FRONTEND_DIR) {
+                    bat 'set HEADLESS=TRUE && set CHROME_DRIVER= && robot --output output-login.xml --log log-login.html --report report-login.html -d robot-selenium\\results robot-selenium\\ui\\login.robot'
+                }
+            }
+        }
+
+        stage('Run Frontend Robot Selenium - Users') {
+            steps {
+                dir(env.FRONTEND_DIR) {
+                    bat 'set HEADLESS=TRUE && set CHROME_DRIVER= && robot --output output-users.xml --log log-users.html --report report-users.html -d robot-selenium\\results robot-selenium\\ui\\users.robot'
+                }
+            }
+        }
+
+        stage('Run Frontend Robot Selenium - Products') {
+            steps {
+                dir(env.FRONTEND_DIR) {
+                    bat 'set HEADLESS=TRUE && set CHROME_DRIVER= && robot --output output-products.xml --log log-products.html --report report-products.html -d robot-selenium\\results robot-selenium\\ui\\products.robot'
+                }
+            }
+        }
+
+        stage('Run Frontend Robot Selenium - Orders') {
+            steps {
+                dir(env.FRONTEND_DIR) {
+                    bat 'set HEADLESS=TRUE && set CHROME_DRIVER= && robot --output output-orders.xml --log log-orders.html --report report-orders.html -d robot-selenium\\results robot-selenium\\ui\\orders.robot'
+                }
+            }
+        }
+
+        stage('Run Frontend Robot Selenium - Performance') {
+            steps {
+                dir(env.FRONTEND_DIR) {
+                    bat 'set HEADLESS=TRUE && set CHROME_DRIVER= && robot --output output-performance.xml --log log-performance.html --report report-performance.html -d robot-selenium\\results robot-selenium\\ui\\performance.robot'
+                }
+            }
+        }
     }
 
     post {
@@ -58,6 +107,11 @@ pipeline {
                 if (outputExists) {
                     robot outputPath: "${env.BACKEND_DIR}/tests/results"
                     archiveArtifacts artifacts: "${env.BACKEND_DIR}/tests/results/report.html, ${env.BACKEND_DIR}/tests/results/log.html", allowEmptyArchive: true
+                }
+                def frontendRobotOutputExists = fileExists "${env.FRONTEND_ROBOT_RESULTS_DIR}/output-login.xml"
+                if (frontendRobotOutputExists) {
+                    robot outputPath: "${env.FRONTEND_ROBOT_RESULTS_DIR}"
+                    archiveArtifacts artifacts: "${env.FRONTEND_ROBOT_RESULTS_DIR}/report-*.html, ${env.FRONTEND_ROBOT_RESULTS_DIR}/log-*.html, ${env.FRONTEND_ROBOT_RESULTS_DIR}/output-*.xml", allowEmptyArchive: true
                 }
                 junit allowEmptyResults: true, testResults: "${env.FRONTEND_DIR}/test-results/*.xml"
                 def playwrightReportExists = fileExists "${env.FRONTEND_DIR}/playwright-report/index.html"
