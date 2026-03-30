@@ -111,7 +111,12 @@ pipeline {
                 }
                 def frontendRobotOutputExists = fileExists "${env.FRONTEND_ROBOT_RESULTS_DIR}/output-login.xml"
                 if (frontendRobotOutputExists) {
-                    robot outputPath: "${env.FRONTEND_ROBOT_RESULTS_DIR}"
+                    robot(
+                        outputPath: "${env.FRONTEND_ROBOT_RESULTS_DIR}",
+                        outputFileName: 'output*.xml',
+                        logFileName: 'log*.html',
+                        reportFileName: 'report*.html'
+                    )
                     archiveArtifacts artifacts: "${env.FRONTEND_ROBOT_RESULTS_DIR}/report-*.html, ${env.FRONTEND_ROBOT_RESULTS_DIR}/log-*.html, ${env.FRONTEND_ROBOT_RESULTS_DIR}/output-*.xml", allowEmptyArchive: true
                 }
                 junit allowEmptyResults: true, testResults: "${env.FRONTEND_DIR}/test-results/*.xml"
