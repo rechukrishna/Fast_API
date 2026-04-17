@@ -53,6 +53,21 @@ services:
     profiles:
       - test
 
+  pytest-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.pytest
+    container_name: backend-pytest-tests
+    environment:
+      API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./tests/results:/app/tests/results
+    profiles:
+      - test
+
   frontend:
     build:
       context: ../frontend

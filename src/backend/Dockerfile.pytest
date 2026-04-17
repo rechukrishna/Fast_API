@@ -1,0 +1,13 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements-test.txt .
+RUN pip install --no-cache-dir pytest pytest-html requests
+
+COPY pytest.ini .
+COPY tests ./tests
+
+ENV API_URL=http://api:8000
+
+CMD ["pytest", "-v", "--html=tests/results/pytest-report.html", "--self-contained-html"]

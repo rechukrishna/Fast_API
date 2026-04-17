@@ -16,9 +16,11 @@ cd Fast_API/src/backend
 docker-compose up -d
 # Wait ~30 seconds for the API to start, then:
 docker-compose --profile test run --rm robot-tests
+# Python API tests (pytest):
+docker-compose --profile test run --rm pytest-tests
 ```
 
-**View results:** Open `tests/results/report.html` in a browser (from `src/backend` directory).
+**View results:** Open `tests/results/report.html` (Robot) and `tests/results/pytest-report.html` (pytest) in a browser (from `src/backend` directory). Pytest run logs are saved to `tests/results/pytest-run.log` and also stream to terminal while tests run.
 
 **Stop services:**
 ```bash
